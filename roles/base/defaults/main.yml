@@ -1,0 +1,8 @@
+---
+base_packages:
+  - curl
+  - jq
+  - ca-certificates
+  - htop
+  - tree
+  - python3-debian

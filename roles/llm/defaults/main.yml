@@ -1,0 +1,5 @@
+---
+llm_dir: /opt/llm
+llm_ollama_image: "ollama/ollama:0.40.9"
+llm_nginx_image: "nginx:1.30.6-alpine"
+llm_api_port: 443

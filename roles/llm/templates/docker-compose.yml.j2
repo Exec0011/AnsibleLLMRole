@@ -1,0 +1,43 @@
+name: llm
+
+services:
+  ollama:
+    image: {{ llm_ollama_image }}
+    container_name: llm-backend
+    ports:
+      - "127.0.0.1:11434:11434"
+    environment:
+      OLLAMA_KEEP_ALIVE: "-1"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+{% if gpu_enabled | bool %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+{% endif %}
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  gateway:
+    image: {{ llm_nginx_image }}
+    container_name: llm-gateway
+    command: ["nginx", "-c", "/etc/nginx/custom/nginx.conf", "-g", "daemon off;"]
+    ports:
+      - "{{ llm_api_port }}:443"
+    volumes:
+      - ./nginx:/etc/nginx/custom:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama-models:

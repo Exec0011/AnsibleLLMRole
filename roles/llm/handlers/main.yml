@@ -1,0 +1,4 @@
+---
+- name: Перечитать конфиг nginx
+  ansible.builtin.command: docker exec llm-gateway nginx -s reload -c /etc/nginx/custom/nginx.conf
+  changed_when: true

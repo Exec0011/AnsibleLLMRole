@@ -1,0 +1,53 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    server_tokens off;
+    access_log /dev/stdout;
+    error_log /dev/stderr warn;
+
+    # DNS Docker: по имени сервиса "ollama" находит IP контейнера
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    # Список разрешённых токенов
+    map_hash_bucket_size 256;
+    map $http_authorization $api_token_valid {
+        default 0;
+{% for token in api_tokens %}
+        "Bearer {{ token }}" 1;
+{% endfor %}
+    }
+
+    # Не больше 10 запросов в секунду на один токен
+    limit_req_zone $http_authorization zone=api_per_token:10m rate=10r/s;
+    limit_req_status 429;
+
+    server {
+        listen 443 ssl;
+        ssl_certificate     /etc/nginx/certs/tls.crt;
+        ssl_certificate_key /etc/nginx/certs/tls.key;
+        ssl_protocols       TLSv1.2 TLSv1.3;
+
+        location /v1/ {
+            if ($api_token_valid = 0) {
+                return 401 '{"error":"invalid or missing API token"}\n';
+            }
+
+            limit_req zone=api_per_token burst=20 nodelay;
+
+            set $backend http://ollama:11434;
+            proxy_pass $backend;
+            proxy_set_header Authorization "";
+            proxy_buffering off;
+            proxy_read_timeout 600s;
+        }
+
+        location / {
+            return 404 '{"error":"not found"}\n';
+        }
+    }
+}

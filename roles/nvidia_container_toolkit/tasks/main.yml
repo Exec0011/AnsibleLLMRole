@@ -1,0 +1,15 @@
+---
+- name: Подключить репозиторий NVIDIA Container Toolkit
+  ansible.builtin.deb822_repository:
+    name: nvidia-container-toolkit
+    types: deb
+    uris: https://nvidia.github.io/libnvidia-container/stable/deb/amd64
+    suites: "/"
+    signed_by: https://nvidia.github.io/libnvidia-container/gpgkey
+  register: nvidia_container_toolkit_repo
+
+- name: Установить NVIDIA Container Toolkit
+  ansible.builtin.apt:
+    name: nvidia-container-toolkit
+    state: present
+    update_cache: "{{ nvidia_container_toolkit_repo is changed }}"

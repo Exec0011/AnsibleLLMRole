@@ -1,0 +1,22 @@
+---
+- name: Подготовка GPU-сервера
+  hosts: gpu_servers
+  become: true
+  roles:
+    - role: preflight
+      tags: [always]
+    - role: base
+      tags: [base]
+    # В WSL драйвер даёт Windows: ставить Linux-драйвер нельзя
+    - role: nvidia_driver
+      when: gpu_enabled | bool and not gpu_wsl | bool
+      tags: [gpu]
+    - role: nvidia_container_toolkit
+      when: gpu_enabled | bool
+      tags: [gpu]
+    - role: docker
+      tags: [docker]
+    - role: llm
+      tags: [llm]
+    - role: smoke_test
+      tags: [smoke]

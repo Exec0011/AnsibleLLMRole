@@ -1,0 +1,36 @@
+---
+- name: Без токена доступ запрещён (401)
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:{{ llm_api_port }}/v1/models"
+    validate_certs: false
+    status_code: 401
+
+- name: Задать модели проверочный вопрос
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:{{ llm_api_port }}/v1/chat/completions"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ api_tokens | first }}"
+    validate_certs: false
+    body_format: json
+    body:
+      model: "{{ llm_model }}"
+      messages:
+        - role: user
+          content: "Ответь одним словом: ты работаешь?"
+      max_tokens: 20
+      temperature: 0
+    timeout: 300
+  register: smoke_test_chat
+
+- name: Убедиться, что модель ответила
+  ansible.builtin.assert:
+    that:
+      - smoke_test_chat.json.choices | length > 0
+      - smoke_test_chat.json.choices[0].message.content | trim | length > 0
+    fail_msg: "Модель не вернула ответ"
+    success_msg: "Модель ответила"
+
+- name: Показать ответ модели
+  ansible.builtin.debug:
+    msg: "Модель {{ llm_model }} ответила: {{ smoke_test_chat.json.choices[0].message.content | trim }}"

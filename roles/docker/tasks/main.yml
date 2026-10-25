@@ -1,0 +1,57 @@
+---
+- name: Удалить неофициальные пакеты Docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+      - docker-compose-v2
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+
+# Пакеты Docker ставим из официального репозитория — он из РФ доступен.
+# Не работает CDN Docker Hub, откуда качаются образы, поэтому образы идут
+# через зеркало (registry-mirrors в templates/daemon.json.j2)
+- name: Подключить официальный репозиторий Docker
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    architectures: amd64
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+  register: docker_repo
+
+- name: Установить Docker и Compose
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: "{{ docker_repo is changed }}"
+
+- name: Настроить Docker daemon
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+  notify: Перезапустить Docker
+
+- name: Применить настройки Docker сейчас
+  ansible.builtin.meta: flush_handlers
+
+- name: Docker запущен и включён в автозагрузку
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Проверить, что GPU виден из контейнера
+  ansible.builtin.command: docker run --rm --gpus all ubuntu:24.04 nvidia-smi -L
+  changed_when: false
+  when: gpu_enabled | bool

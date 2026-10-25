@@ -1,0 +1,6 @@
+---
+# Скопируй в group_vars/all/vault.yml, впиши токен и зашифруй:
+#   ansible-vault encrypt group_vars/all/vault.yml
+# Токен сгенерировать: openssl rand -hex 32
+vault_api_tokens:
+  - "сюда-64-символа-из-openssl-rand-hex-32"

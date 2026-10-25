@@ -1,0 +1,9 @@
+# Скопируй в inventory/hosts.yml и впиши адрес своего сервера
+all:
+  children:
+    gpu_servers:
+      hosts:
+        gpu-01:
+          ansible_host: 203.0.113.10
+          ansible_port: 22
+          ansible_user: ubuntu
