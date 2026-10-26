@@ -7,7 +7,6 @@
       tags: [always]
     - role: base
       tags: [base]
-    # В WSL драйвер даёт Windows: ставить Linux-драйвер нельзя
     - role: nvidia_driver
       when: gpu_enabled | bool and not gpu_wsl | bool
       tags: [gpu]
