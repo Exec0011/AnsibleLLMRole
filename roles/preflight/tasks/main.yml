@@ -13,14 +13,13 @@
   changed_when: false
   check_mode: false
 
-# В WSL видеокарта не видна на шине PCI: её отдаёт драйвер Windows,
-# а внутри WSL лежит только его nvidia-smi
+# В WSL видеокарта не видна на шине PCI: её отдаёт драйвер Windows,а внутри WSL лежит только его nvidia-smi
 - name: Проверить, не WSL ли это с видеокартой
   ansible.builtin.stat:
     path: /usr/lib/wsl/lib/nvidia-smi
   register: preflight_wsl_nvidia_smi
 
-# gpu_enabled и gpu_wsl — общие переменные: их читают site.yml и другие
+# gpu_enabled и gpu_wsl - общие переменные: их читают site.yml и другие
 # роли, поэтому без префикса роли
 - name: Запомнить, есть ли GPU и не WSL ли это
   ansible.builtin.set_fact:
